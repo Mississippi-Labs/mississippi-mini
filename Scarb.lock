@@ -14,7 +14,7 @@ name = "dojo_plugin"
 version = "0.3.6"
 
 [[package]]
-name = "pet_battle"
+name = "mississippi_mini"
 version = "0.1.0"
 dependencies = [
  "dojo",

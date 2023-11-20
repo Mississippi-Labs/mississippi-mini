@@ -3,20 +3,20 @@ use starknet::{ContractAddress};
 // define the interface
 #[starknet::interface]
 trait IConfig<TContractState> {
-    fn initRole(self: @TContractState);
-    fn initSkill(self: @TContractState);
+    fn init_role(self: @TContractState);
+    fn init_skill(self: @TContractState);
 }
 
 // dojo decorator
 #[dojo::contract]
 mod config {
-    use pet_battle::models::{Role, Skill};
-    use pet_battle::constants;
+    use mississippi_mini::models::{Role, Skill};
+    use mississippi_mini::constants;
     use super::IConfig;
 
     #[external(v0)]
     impl ConfigImpl of IConfig<ContractState> {
-        fn initRole(self: @ContractState) {
+        fn init_role(self: @ContractState) {
             let world = self.world_dispatcher.read();
 
             let warrior = Role { 
@@ -44,26 +44,26 @@ mod config {
             set!(world, (knight));
         }
 
-        fn initSkill(self: @ContractState) {
+        fn init_skill(self: @ContractState) {
             let world = self.world_dispatcher.read();
 
             let comboAttackSkill = Skill {
                 id : constants::SKILL_COMBO_ATTACK,
                 value : 20,
             };
-            set!(world, comboAttackSkill);
+            set!(world, (comboAttackSkill));
 
             let addHpSkill = Skill{
                 id : constants::SKILL_ADD_HP,
                 value : 100,
             };
-            set!(world, addHpSkill);
+            set!(world, (addHpSkill));
 
             let addSpeedSkill = Skill{
                 id : constants::SKILL_ADD_SPEED,
                 value : 100,
             };
-            set!(world, addSpeedSkill);
+            set!(world, (addSpeedSkill));
         }
     }
 

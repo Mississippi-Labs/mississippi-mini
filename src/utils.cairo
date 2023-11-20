@@ -1,4 +1,4 @@
-use pet_battle::models::{BattleInfo, Position, Direction, Skill, Role};
+use mississippi_mini::models::{BattleInfo, Position, Direction, Skill, Role};
 use starknet::{ContractAddress};
 use dojo::world::{IWorldDispatcher};
 
