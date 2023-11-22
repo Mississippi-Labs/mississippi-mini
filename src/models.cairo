@@ -42,6 +42,16 @@ struct Config {
 }
 
 #[derive(Model, Copy, Drop, Print, Serde)]
+struct Global {
+    #[key] // primary key
+    id: u32,
+    battleId : u32,
+}
+
+
+
+
+#[derive(Model, Copy, Drop, Print, Serde)]
 struct BattleInfo {
     #[key] // primary key
     battleId: u32,

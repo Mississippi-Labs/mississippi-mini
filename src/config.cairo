@@ -5,12 +5,14 @@ use starknet::{ContractAddress};
 trait IConfig<TContractState> {
     fn init_role(self: @TContractState);
     fn init_skill(self: @TContractState);
+    fn init_config(self: @TContractState);
+    fn init_global(self: @TContractState);
 }
 
 // dojo decorator
 #[dojo::contract]
 mod config {
-    use mississippi_mini::models::{Role, Skill};
+    use mississippi_mini::models::{Role, Skill, Global};
     use mississippi_mini::constants;
     use super::IConfig;
 
@@ -64,6 +66,15 @@ mod config {
                 value : 100,
             };
             set!(world, (addSpeedSkill));
+        }
+
+        fn init_config(self: @ContractState) {
+
+        }
+
+        fn init_global(self: @ContractState) {
+            let world = self.world_dispatcher.read();
+            set!(world, (Global{id:constants::GlOBAL_CONFIG_KEY, battleId:0}));
         }
     }
 

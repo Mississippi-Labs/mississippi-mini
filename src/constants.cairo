@@ -6,3 +6,6 @@ const ROLE_KNIGHT: u32 = 1;
 const SKILL_COMBO_ATTACK: u32 = 0;
 const SKILL_ADD_HP: u32 = 1;
 const SKILL_ADD_SPEED: u32 = 2;
+
+// Global Config Key 
+const GlOBAL_CONFIG_KEY: u32 = 100;

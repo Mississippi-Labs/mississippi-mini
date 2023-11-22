@@ -14,7 +14,7 @@ trait IGame<TContractState> {
 #[dojo::contract]
 mod game {
     use starknet::{ContractAddress, get_caller_address};
-    use mississippi_mini::models::{Player, BattleInfo, BattleResult, Skill, Role};
+    use mississippi_mini::models::{Player, BattleInfo, BattleResult, Skill, Role, Global};
     use mississippi_mini::utils::next_position;
     use mississippi_mini::constants;
     // use mississippi_mini::utils::battle_property_settting;
@@ -77,7 +77,12 @@ mod game {
             // retrive player 
             let world = self.world_dispatcher.read();
             let player = get_caller_address();
-            let battleId = 1;
+            
+
+            let mut globalParams = get!(world, constants::GlOBAL_CONFIG_KEY, (Global));
+            globalParams.battleId = globalParams.battleId + 1;
+            let battleId = globalParams.battleId;
+            set!(world, (globalParams));
 
             // check target exist 
 
@@ -161,6 +166,7 @@ mod game {
             battleId : attacker.battleId,
             winner : winner,
         };
+        set!(world, (battleResult));
 
         emit!(world, Win { battleId: attacker.battleId, winner: winner});
     }
@@ -245,6 +251,10 @@ mod tests {
         p.roleId.print();
         let x = 5;
         x.print();
+
+        let battleReuslt = get!(world, 1, (BattleResult));
+        battleReuslt.print();
+        let battleInfo = get!(world, (1, false), (BattleInfo));
 
 
 
