@@ -2,8 +2,6 @@ use starknet::ContractAddress;
 // use array::ArrayTrait;
 // use default
 
-
-
 // dojo data models
 #[derive(Model, Drop, Serde)]
 struct Player {
@@ -47,9 +45,6 @@ struct Global {
     id: u32,
     battleId : u32,
 }
-
-
-
 
 #[derive(Model, Copy, Drop, Print, Serde)]
 struct BattleInfo {

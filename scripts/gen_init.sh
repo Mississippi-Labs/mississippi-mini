@@ -23,14 +23,10 @@ echo "--------------------------------------------------------------------------
 game_component=("Role" "Skill" "Global" "Player" "BattleInfo" "BattleResult")
 config_component=("Role" "Skill" "Global")
 
-for component in ${game_component[@]}; do
-    echo $component
-    sozo auth writer $component $GAME_ADDRESS --world $WORLD_ADDRESS --rpc-url $RPC_URL 
-done
 
-for component in ${config_component[@]}; do
-    sozo auth writer $component $CONFIG_ADDRESS --world $WORLD_ADDRESS --rpc-url $RPC_URL  
-done
+sozo execute mississippi_mini::config::config init_skill  --rpc-url $RPC_URL 
+
+
 
 
 

@@ -4,3 +4,4 @@ mod game;
 mod utils;
 mod constants;
 mod config;
+mod random;
