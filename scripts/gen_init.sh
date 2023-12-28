@@ -19,15 +19,10 @@ echo " "
 echo config : $CONFIG_ADDRESS
 echo "---------------------------------------------------------------------------"
 
-# enable system -> component authorizations
-game_component=("Role" "Skill" "Global" "Player" "BattleInfo" "BattleResult")
-config_component=("Role" "Skill" "Global")
 
+sozo execute mississippi_mini::config::config init_role  --rpc-url $RPC_URL 
 
 sozo execute mississippi_mini::config::config init_skill  --rpc-url $RPC_URL 
 
 
-
-
-
-echo "Default authorizations have been successfully set."
+echo "Default Setting have been successfully set."
