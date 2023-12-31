@@ -3,7 +3,8 @@ set -euo pipefail
 pushd $(dirname "$0")/..
 
 # export RPC_URL="http://localhost:5050";
-export RPC_URL="https://starknet-goerli.infura.io/v3/5ca372516740427e97512d4dfefd9c47";
+# export RPC_URL="https://starknet-goerli.infura.io/v3/5ca372516740427e97512d4dfefd9c47";
+export RPC_URL="https://api.cartridge.gg/x/mississippi/katana";
 export WORLD_ADDRESS=$(cat ./target/dev/manifest.json | jq -r '.world.address')
 
 export GAME_ADDRESS=$(cat ./target/dev/manifest.json | jq -r '.contracts[] | select(.name == "mississippi_mini::game::game" ).address')

@@ -15,7 +15,14 @@ dojo = { git = "https://github.com/dojoengine/dojo", version = "0.4.1" }
 initializer_class_hash = "0xbeef"
 
 [tool.dojo.env]
-rpc_url = "http://localhost:5050/"
-account_address = "0x517ececd29116499f4a1b64b094da79ba08dfd54a3edaa316134c41f8160973"
-private_key = "0x1800000000300000180000000000030000000000003006001800006600"
+# rpc_url = "http://localhost:5050/"
+# account_address = "0x517ececd29116499f4a1b64b094da79ba08dfd54a3edaa316134c41f8160973"
+# private_key = "0x1800000000300000180000000000030000000000003006001800006600"
+# world_address="0x1374ef8311b490e1a3ae8e63f4cb1c602e6620d4a7bd87c66c44152b27770b4"
+
+rpc_url = "https://api.cartridge.gg/x/mississippi/katana"
+account_address = "0x7ef05a4d3ef7cdb6ec73c8efff4e9e592d967e98642819aa294df8f2b80436b"
+private_key = "0x10689f03e44d450573704d279665292b1cbb259bf38dc5a2207e3913389a80e"
 world_address="0x1374ef8311b490e1a3ae8e63f4cb1c602e6620d4a7bd87c66c44152b27770b4"
+
+

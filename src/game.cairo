@@ -14,8 +14,7 @@ trait IGame<TContractState> {
 #[dojo::contract]
 mod game {
     use starknet::{ContractAddress, get_caller_address};
-    use mississippi_mini::models::{Player, BattleInfo, BattleResult, Skill, Role, Global};
-    use mississippi_mini::utils::next_position;
+    use mississippi_mini::models::{Player, BattleInfo, BattleResult, Skill, Role, Global, BattleRank};
     use mississippi_mini::constants;
     use mississippi_mini::random::{RandomTrait};
     // use mississippi_mini::utils::battle_property_settting;
@@ -176,6 +175,14 @@ mod game {
             winner : winner,
         };
         set!(world, (battleResult));
+
+        let mut rankInfo = get!(world, winner, (BattleRank));
+
+        let mut battleRank = BattleRank {
+            addr : winner,
+            score:  (rankInfo.score + 1),
+        };
+        set!(world, (battleRank));
 
         emit!(world, Win { battleId: attacker.battleId, winner: winner});
     }
