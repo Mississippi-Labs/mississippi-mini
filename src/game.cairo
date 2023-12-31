@@ -14,11 +14,14 @@ trait IGame<TContractState> {
 #[dojo::contract]
 mod game {
     use starknet::{ContractAddress, get_caller_address};
-    use mississippi_mini::models::{Player, BattleInfo, BattleResult, Skill, Role, Global};
-    use mississippi_mini::utils::next_position;
+    use mississippi_mini::models::{Player, BattleInfo, BattleResult, Skill, Role, Global, BattleRank};
     use mississippi_mini::constants;
+    use mississippi_mini::random::{RandomTrait};
     // use mississippi_mini::utils::battle_property_settting;
     use super::IGame;
+
+    const DICE_FACE_COUNT: u8 = 100;
+    const DICE_SEED: felt252 = 'SEED';
 
     // declaring custom event struct
     #[event]
@@ -146,6 +149,11 @@ mod game {
             }
 
             battle_round(world, attacker, defender);
+            let flag = false;
+            effect_after_battle_skill(world, attacker, flag);
+            if flag && defender.hp >0 {
+                battle_round(world, attacker, defender);
+            }
         };
 
         let mut attackerPrior = true;
@@ -168,19 +176,34 @@ mod game {
         };
         set!(world, (battleResult));
 
+        let mut rankInfo = get!(world, winner, (BattleRank));
+
+        let mut battleRank = BattleRank {
+            addr : winner,
+            score:  (rankInfo.score + 1),
+        };
+        set!(world, (battleRank));
+
         emit!(world, Win { battleId: attacker.battleId, winner: winner});
     }
 
     fn effect_skill(world: IWorldDispatcher, mut info: BattleInfo) {
-        if info.skillId == constants::SKILL_COMBO_ATTACK {
-            
-        } else if info.skillId == constants::SKILL_ADD_HP {
+        if info.skillId == constants::SKILL_ADD_HP {
             let skill = get!(world, info.skillId , (Skill));
             info.hp = info.hp + skill.value;
         } else if info.skillId == constants::SKILL_ADD_SPEED {
             let skill = get!(world, info.skillId , (Skill));
             info.speed = info.speed + skill.value;
         }
+    }
+
+    fn effect_after_battle_skill(world: IWorldDispatcher, info: BattleInfo, mut flag: bool)  {
+        if info.skillId == constants::SKILL_COMBO_ATTACK {
+            let mut dice = RandomTrait::new(DICE_FACE_COUNT, DICE_SEED);
+            if dice.roll() > 80 {
+                flag = true;
+            }
+        } 
     }
 
     fn battle_round(world: IWorldDispatcher, mut  attacker: BattleInfo, mut defender: BattleInfo) {
