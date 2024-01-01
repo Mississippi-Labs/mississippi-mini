@@ -89,7 +89,7 @@ const UserInfo = (props: IUserInfo) => {
           <p>
             4. Select one skill for each battle: <br/>
             HP Boost: Increases HP by 100 <br/>
-            SPD Surge: Boosts speed by 100 <br/>
+            SPD Surge: Boosts speed by 15 <br/>
             Chain ATK: 20% chance of a consecutive atk
           </p>
           <p>
