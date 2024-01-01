@@ -20,7 +20,7 @@ echo config : $CONFIG_ADDRESS
 echo "---------------------------------------------------------------------------"
 
 # enable system -> component authorizations
-game_component=("Role" "Skill" "Global" "Player" "BattleInfo" "BattleResult", "BattleRank")
+game_component=("Role" "Skill" "Global" "Player" "BattleInfo" "BattleResult")
 config_component=("Role" "Skill" "Global")
 
 for component in ${game_component[@]}; do

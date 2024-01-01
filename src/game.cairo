@@ -81,11 +81,13 @@ mod game {
             let world = self.world_dispatcher.read();
             let player = get_caller_address();
             
-
             let mut globalParams = get!(world, constants::GlOBAL_CONFIG_KEY, (Global));
             globalParams.battleId = globalParams.battleId + 1;
             let battleId = globalParams.battleId;
             set!(world, (globalParams));
+
+            // globalParams.battleId.print();
+
 
             // check target exist 
 
@@ -103,7 +105,7 @@ mod game {
                 skillId: 0,
             };
             let mut gamePlayer = get!(world, player, (Player));
-            battle_property_settting(world, gamePlayer.roleId, gamePlayer.skillId, attackerBattleInfo, player);
+            battle_property_settting(world, gamePlayer.roleId, gamePlayer.skillId, ref attackerBattleInfo, player);
             
 
             let mut defenderBattleInfo = BattleInfo{
@@ -120,13 +122,13 @@ mod game {
                 skillId: 0,
             };
             let mut targetPlayer = get!(world, target, (Player));
-            battle_property_settting(world, targetPlayer.roleId, targetPlayer.skillId, defenderBattleInfo, target);
+            battle_property_settting(world, targetPlayer.roleId, targetPlayer.skillId, ref defenderBattleInfo, target);
             
-            battle(world, attackerBattleInfo, defenderBattleInfo);
+            battle(world, ref attackerBattleInfo, ref defenderBattleInfo);
         }
     }
 
-    fn battle_property_settting(world: IWorldDispatcher, roleId: u32, skillId: u32, mut info: BattleInfo, addr : ContractAddress) {
+    fn battle_property_settting(world: IWorldDispatcher, roleId: u32, skillId: u32, ref info: BattleInfo, addr : ContractAddress) {
         let role = get!(world, roleId, (Role));
         info.hp = role.hp;
         info.attack = role.attack;
@@ -138,28 +140,41 @@ mod game {
     }
 
     // battle
-    fn battle(world: IWorldDispatcher,  mut attacker: BattleInfo, mut defender: BattleInfo) {
+    fn battle(world: IWorldDispatcher,   ref attacker: BattleInfo, ref defender: BattleInfo) {
         // skill effect 
-        effect_skill(world, attacker);
-        effect_skill(world, defender);
-
-        loop {
-            if attacker.hp == 0 || defender.hp == 0 {
-                break;
-            }
-
-            battle_round(world, attacker, defender);
-            let flag = false;
-            effect_after_battle_skill(world, attacker, flag);
-            if flag && defender.hp >0 {
-                battle_round(world, attacker, defender);
-            }
-        };
+        effect_skill(world, ref attacker);
+        effect_skill(world, ref defender);
 
         let mut attackerPrior = true;
         if attacker.speed < defender.speed {
             attackerPrior = false;
         }
+
+        loop {
+            if attacker.hp <= 0 || defender.hp <= 0 {
+                break;
+            }
+
+            if attackerPrior {
+                battle_round(world, ref attacker, ref defender);
+            } else {
+                battle_round(world, ref defender, ref attacker);
+            }
+
+            let mut  attacker_combot_flag = false;
+            effect_after_battle_skill(world, attacker, ref attacker_combot_flag);
+            if attacker_combot_flag && defender.hp >0 && attacker.hp > 0{
+                battle_round(world, ref attacker, ref defender);
+            }
+
+            let mut  defender_combot_flag = false;
+            effect_after_battle_skill(world, defender, ref defender_combot_flag);
+            if defender_combot_flag && defender.hp >0 && attacker.hp > 0{
+                battle_round(world,  ref defender, ref attacker);
+            }
+        };
+
+
 
         let mut winner = attacker.addr;
         if defender.hp > 0  {
@@ -187,7 +202,7 @@ mod game {
         emit!(world, Win { battleId: attacker.battleId, winner: winner});
     }
 
-    fn effect_skill(world: IWorldDispatcher, mut info: BattleInfo) {
+    fn effect_skill(world: IWorldDispatcher, ref info: BattleInfo) {
         if info.skillId == constants::SKILL_ADD_HP {
             let skill = get!(world, info.skillId , (Skill));
             info.hp = info.hp + skill.value;
@@ -197,7 +212,7 @@ mod game {
         }
     }
 
-    fn effect_after_battle_skill(world: IWorldDispatcher, info: BattleInfo, mut flag: bool)  {
+    fn effect_after_battle_skill(world: IWorldDispatcher, info: BattleInfo, ref flag: bool)  {
         if info.skillId == constants::SKILL_COMBO_ATTACK {
             let mut dice = RandomTrait::new(DICE_FACE_COUNT, DICE_SEED);
             if dice.roll() > 80 {
@@ -206,7 +221,7 @@ mod game {
         } 
     }
 
-    fn battle_round(world: IWorldDispatcher, mut  attacker: BattleInfo, mut defender: BattleInfo) {
+    fn battle_round(world: IWorldDispatcher, ref  attacker: BattleInfo, ref defender: BattleInfo) {
         let attackerHurt = defender.attack - attacker.defense;
         if attackerHurt > 0 {
             defender.hp = defender.hp - attackerHurt;
@@ -234,7 +249,7 @@ mod tests {
 
     // import models
     use mississippi_mini::models::{player};
-    use mississippi_mini::models::{Player, BattleInfo, BattleResult, Skill, Role};
+    use mississippi_mini::models::{Player, BattleInfo, BattleResult, Skill, Role, BattleRank};
 
     // import config
     use mississippi_mini::config::{config, IConfigDispatcher, IConfigDispatcherTrait};
@@ -243,10 +258,12 @@ mod tests {
     use super::{game, IGameDispatcher, IGameDispatcherTrait};
 
     #[test]
-    #[available_gas(800000000)]
+    #[available_gas(8000000000)]
     fn test_battle() {
-        // caller
+        // attacker
         let caller = starknet::contract_address_const::<0x0>();
+        caller.print();
+        // print!("start battle");
 
         // models
         let mut models = array![player::TEST_CLASS_HASH];
@@ -266,47 +283,27 @@ mod tests {
         config_actions.init_role();
         config_actions.init_skill();
 
-        // battle
+
+        actions_system.choose_role(1);
+        actions_system.choose_skill(1);
+
+
+        // defender 
         let target = starknet::contract_address_const::<0x1>();
-        actions_system.start_battle(target);
+        // actions_system.choose_role( 1);
+        // actions_system.choose_skill(2);
+
+
+
+        // battle
+        // actions_system.start_battle(caller);
 
         let p = get!(world, caller, (Player));
         p.roleId.print();
-        let x = 5;
-        x.print();
+        // "adfasd".print();
 
-        let battleReuslt = get!(world, 1, (BattleResult));
-        battleReuslt.print();
+        let battleRank = get!(world, caller, (BattleRank));
+        battleRank.print();
         let battleInfo = get!(world, (1, false), (BattleInfo));
-
-
-
-
-        // // call spawn()
-        // actions_system.spawn();
-
-        // // call move with direction right
-        // actions_system.move(Direction::Right(()));
-
-        // // Check world state
-        // let moves = get!(world, caller, Moves);
-
-        // // casting right direction
-        // let right_dir_felt: felt252 = Direction::Right(()).into();
-
-        // // check moves
-        // assert(moves.remaining == 99, 'moves is wrong');
-
-        // // check last direction
-        // assert(moves.last_direction.into() == right_dir_felt, 'last direction is wrong');
-
-        // // get new_position
-        // let new_position = get!(world, caller, Position);
-
-        // // check new position x
-        // assert(new_position.vec.x == 11, 'position x is wrong');
-
-        // // check new position y
-        // assert(new_position.vec.y == 10, 'position y is wrong');
     }
 }
