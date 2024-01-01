@@ -9,6 +9,7 @@ import { useDojo } from "../../../DojoContext";
 interface IProps {
   onPlayBtnClick: () => void;
   onlyRight?: boolean;
+  addr?: string;
 }
 
 
@@ -56,7 +57,7 @@ const HomeHeader = (props: IProps) => {
       </div>
       {
         walletAddress ?
-          <UserAddress address={walletAddress} account={walletBalance + 'ETH'}/>
+          <UserAddress address={props?.addr} account={walletBalance + 'ETH'}/>
           :
           <button className="play-btn mi-btn" onClick={props.onPlayBtnClick}>PLAY NOW</button>
       }

@@ -4,6 +4,7 @@ import { Stage } from '@pixi/react';
 import Player, { IPlayer } from '@/components/PIXIPlayers/Player';
 import fightIcon from '@/assets/img/fight-icon.png';
 import { Skills } from '@/config/hero';
+import { hunterEquip, warriorEquip } from '@/mock/data';
 
 
 PIXI.settings.SCALE_MODE = PIXI.SCALE_MODES.NEAREST;
@@ -16,7 +17,6 @@ const UserInfo = (props: IUserInfo) => {
 
   const { player } = props;
   const lootHasLoaded = player?.addr;
-  console.log(player, 'player')
 
   return (
     <div className={'ffa-userinfo-wrapper'}>
@@ -43,7 +43,7 @@ const UserInfo = (props: IUserInfo) => {
               </dl>
               <dl>
                 <dt>Defense</dt>
-                <dd><span className="base-attr">{player?.def ?? 0}</span></dd>
+                <dd><span className="base-attr">{player?.defense ?? 0}</span></dd>
               </dl>
               <dl>
                 <dt>Speed</dt>

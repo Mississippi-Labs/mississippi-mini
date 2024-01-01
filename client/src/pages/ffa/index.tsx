@@ -5,24 +5,19 @@ import UserInfo from './userInfo';
 import fightIcon from '@/assets/img/fight-icon.png';
 import Dialog from '@/pages/ffa/dialog';
 import DuelField, { IDuelFieldMethod } from '@/components/DuelField';
-import { playerA, playerB, Rank1, Rank2 } from '@/mock/data';
-import { ethers } from 'ethers';
+import { hunterEquip, playerA, playerB, warriorEquip } from '@/mock/data';
 
 import { Skills } from '@/config/hero';
-import { type } from 'os';
 
-const rpc = 'https://starknet-goerli.infura.io/v3/5ca372516740427e97512d4dfefd9c47';
-const key = '0x1374ef8311b490e1a3ae8e63f4cb1c602e6620d4a7bd87c66c44152b27770b4';
 import { useEntityQuery } from '@dojoengine/react'
 import { Has, getComponentValue } from "@dojoengine/recs";
 import { useDojo } from "../../DojoContext";
-import { set } from 'mobx';
 
 const FFA = () => {
   const {
     setup: {
       components: { BattleInfo, BattleResult, Player, Skill, Role, Global },
-      systemCalls: { chooseSkill, chooseRole, startBattle, initRole, initSkill },
+      systemCalls: { chooseSkill, chooseRole, startBattle: $startBattle, initRole, initSkill },
     },
     account: {
       clear,
@@ -34,6 +29,10 @@ const FFA = () => {
   } = useDojo()
 
   const RoleData = useEntityQuery([Has(Role)]).map((entity) => getComponentValue(Role, entity));
+
+  const SkillData = useEntityQuery([Has(Skill)]).map((entity) => getComponentValue(Skill, entity));
+  const BattleInfoData = useEntityQuery([Has(BattleInfo)]).map((entity) => getComponentValue(BattleInfo, entity));
+  const BattleResultData = useEntityQuery([Has(BattleResult)]).map((entity) => getComponentValue(BattleResult, entity));
   const PlayerData:any = useEntityQuery([Has(Player)]).map((entity) => {
     let player = getComponentValue(Player, entity);
     let addr:any = player?.addr;
@@ -44,11 +43,17 @@ const FFA = () => {
       ...role,
       ...player,
       addr: '0x' + hex,
+      _addr: addr,
+      countOfWin: 0,
+      equip: role.id === 0 ? hunterEquip : warriorEquip,
     }
   });
-  const SkillData = useEntityQuery([Has(Skill)]).map((entity) => getComponentValue(Skill, entity));
-  const BattleInfoData = useEntityQuery([Has(BattleInfo)]).map((entity) => getComponentValue(BattleInfo, entity));
-  const BattleResultData = useEntityQuery([Has(BattleResult)]).map((entity) => getComponentValue(BattleResult, entity));
+  BattleResultData.forEach((data) => {
+    const player = PlayerData.find(item => item._addr === data.winner);
+    if (player) {
+      player.countOfWin += 1;
+    }
+  });
   console.log(SkillData, RoleData, PlayerData, 'SkillData')
   console.log(BattleInfoData, BattleResultData, 'BattleInfoData')
   const GlobalData = useEntityQuery([Has(Global)]).map((entity) => getComponentValue(Global, entity));
@@ -72,46 +77,27 @@ const FFA = () => {
   const [round, setRound] = useState(0);
   const [attackRole, setAttackRole] = useState('left');
   const [logs, setLogs] = useState([]);
-  const [rankData, setRankData] = useState(Rank1);
 
-  const [player, setPlayer] = useState();
-  const [skillVisible, setSkillVisible] = useState(false);
   const [skillId, setSkillId] = useState(0);
   const [battleId, setBattleId] = useState(-1);
 
   const targetData:any = useRef();
+  const usernameRef = useRef('');
 
-  const chooseRoleFun = async () => {
-    console.log(account, 'account')
-    // 随机0or1
-    let id = Math.floor(Math.random() * 2);
-    await chooseRole(account, id);
-  }
 
-  const showDialog = (index:any) => {
-    let player:any = PlayerData[index];
-    targetData.current = player;
+  const showDialog = (addr) => {
+    targetData.current = PlayerData.find(item => item.addr === addr);
     setDialogVisible(true);
   }
 
   const closeDialog = () => {
     targetData.current = null;
     setDialogVisible(false);
-    setSkillVisible(false)
   }
 
-  const battleFun = async () => {
-    let addr = targetData.current.addr;
-    closeDialog()
-    await chooseSkill(account, skillId);
-    let event = await startBattle(account, addr)
-    let battleId = event?.[0]?.data?.[5] || ''
-    battleId = Number(battleId)
-    setBattleId(battleId)
-  }
 
   const formatAddress = (addr:string) => {
-    return addr.slice(0, 6) + '...' + addr.slice(-6);
+    return addr.slice(0, 4) + '...' + addr.slice(-2);
   }
 
   useEffect(() => {
@@ -122,8 +108,10 @@ const FFA = () => {
       const bn = BigInt(win);
       const hex = bn.toString(16);
       let winner = '0x' + hex;
-      alert(winner == account.address ? 'You win!' : 'You lose!')
-      setBattleId(-1)
+      console.log('______________________________________________')
+      console.log(winner == account.address ? 'You win!' : 'You lose!')
+      console.log('______________________________________________')
+      // setBattleId(-1)
     }
   }, [battleId])
 
@@ -152,31 +140,36 @@ const FFA = () => {
     if (round > 0) {
       if (attackRole === 'left') {
         battleRef.current?.leftAttack('sprint');
-        defer.hp -= attacker.attack - defer.def;
+        defer.hp -= attacker.attack - defer.defense;
         if (defer.hp <= 0) {
           defer.hp = 0;
           showBattleResult('win');
           setRound(0);
-          setLogs([1]);
-          setRankData(Rank2);
+          setLogs([...logs, {addr: defer.addr, win: true}]);
         } else {
           setTimeout(() => {
             setRound((prevState => prevState + 1));
-            setAttackRole('right');
+            // setAttackRole('right');
+            if (skillName === 'atk' && round % 3 === 0 && round <= 15) {
+              console.log('追击');
+            } else {
+              setAttackRole('right');
+            }
           }, 3000)
         }
         setDefer({...defer});
       } else {
         battleRef.current?.rightAttack('sprint');
-        attacker.hp -= defer.attack - attacker.def;
+        attacker.hp -= defer.attack - attacker.defense;
         if (attacker.hp <= 0) {
           attacker.hp = 0;
           showBattleResult('lose');
           setRound(0);
+          setLogs([...logs, {addr: defer.addr, win: false}]);
         } else {
           setTimeout(() => {
             setRound((prevState => prevState + 1));
-            if (round % 3 === 0 && round <= 15) {
+            if (defer.skillId === 2 && round % 3 === 0 && round <= 15) {
               console.log('追击');
             } else {
               setAttackRole('left');
@@ -186,20 +179,24 @@ const FFA = () => {
         setAttacker({...attacker});
       }
     }
-    console.log(round);
   }, [round]);
 
   const mint = () => {
     setNameDialogVisible(true);
   }
 
-  const create = () => {
+  const create = async () => {
+    if (!usernameRef.current.value) {
+      alert('please input your username');
+      return false;
+    }
     setNameDialogVisible(false);
     setMintState('minting');
-    setTimeout(() => {
-      setPlayer(playerA);
-      setMintState('finished');
-    }, 3000)
+    console.log(account, 'account')
+    // 随机0or1
+    const id = Math.floor(Math.random() * 2);
+    await chooseRole(account, id);
+    setMintState('finished');
   }
 
   const selectSkill = (name) => {
@@ -207,21 +204,40 @@ const FFA = () => {
     setSkillName(name);
   }
 
-  const startBattle = () => {
-    const skillType = Skills.find(item => item.name === skillName).type;
+  const startBattle = async () => {
+    const skillIndex = Skills.findIndex(item => item.name === skillName);
+    const skillType = Skills[skillIndex].type;
+    const _attacker = {...curPlayer};
+    const _defer = {...targetData.current};
+
+    if (_defer.skillId === 0) {
+      _defer.hp += 100;
+    } else if (_defer.skillId === 1) {
+      _defer.speed += 15;
+    }
+
     switch (skillType) {
       case 'spd':
-        attacker.speed += 15;
+        _attacker.speed += 15;
         break;
       case 'hp':
-        attacker.hp += 100;
-        attacker.maxHp += 100;
+        _attacker.hp += 100;
         break;
     }
-    setAttacker({...attacker});
+
+    await chooseSkill(account, skillId);
+    const event = await $startBattle(account, targetData.current.addr);
+    console.log(event, 'event');
+    let battleId = event?.[0]?.data?.[5] || ''
+    battleId = Number(battleId)
+    setBattleId(battleId)
+
+    setAttacker({..._attacker, maxHp: _attacker.hp});
+    setDefer({..._defer, maxHp: _defer.hp});
     setSkillDialogVisible(false);
     setFighting(true);
     setRound(1);
+    setAttackRole(_attacker.speed >= _defer.speed ? 'left' : 'right');
   }
 
   const showBattleResult = (result) => {
@@ -232,12 +248,11 @@ const FFA = () => {
     }, 3000);
   }
 
-  const myRank = rankData.find(item => item.name === 'Alice');
 
   return (
     <div className={'ffa-page'}>
 
-      <Header/>
+      <Header addr={curPlayer?.addr}/>
 
       <section className={'ffa-section'}>
         <div className="ffa-switch-wrapper">
@@ -255,17 +270,15 @@ const FFA = () => {
           >Battle</h2>
         </div>
         {
-          tab === 'home' && <>
-            <UserInfo player={player}/>
+          (tab === 'home') && <>
+            <UserInfo player={curPlayer}/>
             {
-              mintState !== 'finished' && (
+              (mintState !== 'finished' && !curPlayer.addr ) && (
                 <button className="mi-btn" onClick={mint}>{
                   mintState === 'init' ? 'Mint' : 'Minting...'
                 }</button>
               )
             }
-            {/*<UserInfo player={curPlayer} />*/}
-            {/*<button className="mi-btn" onClick={chooseRoleFun}>Mint</button>*/}
           </>
         }
 
@@ -276,78 +289,54 @@ const FFA = () => {
               <div className="leaderboard-wrapper">
                 <ul className={'leaderboard-list'}>
                   {
-                  //   rankData.map((data, index) => {
-                  //     return (
-                  //       <li className={'rank-row'}>
-                  //         <div className="rank-num">{index + 1}</div>
-                  //         <div className="username">{data.name}</div>
-                  //         <div className="addr">{data.address}</div>
-                  //         <div className="win-count">V{data.win}</div>
-                  //         <div className="lose-count">D{data.lose}</div>
-                  //         {
-                  //           data.name !== 'Alice' && (
-                  //             <div
-                  //               className="fight-icon"
-                  //               onClick={() => {
-                  //                 setDialogVisible(true);
-                  //               }}
-                  //             >
-                  //               <img src={fightIcon} alt="fight"/>
-                  //             </div>
-                  //           )
-                  //         }
-                  //
-                  //       </li>
-                  //     )
-                  //   })
-                  // }
-
-                    PlayerData.map((item:any, index:any) => (
+                    PlayerData.sort((a, b) => b.countOfWin - a.countOfWin).map((item:any, index) => (
                       <li className={'rank-row'} key={index}>
-                        <div className="rank-num">{item.name.toString()}</div>
+                        <div className="rank-num">{index + 1}</div>
+                        {/*<div className="username">{item.name.toString()}</div>*/}
                         <div className="addr">{formatAddress(item.addr.toString())}</div>
-                        <div className="win-count">V2</div>
-                        <div className="lose-count">D6</div>
-                        <div
-                          className="fight-icon"
-                          onClick={() => showDialog(index)}
-                        >
-                          <img src={fightIcon} alt="fight"/>
-                        </div>
+                        <div className="win-count">V{item.countOfWin}</div>
+                        {
+                          curPlayer?.addr !== item.addr && (
+                            <div
+                              className="fight-icon"
+                              onClick={() => showDialog(item.addr)}
+                            >
+                              <img src={fightIcon} alt="fight"/>
+                            </div>
+                          )
+                        }
                       </li>
                     ))
                   }
                 </ul>
-                <div className="my-rank-info rank-row">
-                  <div className="rank-num">{rankData.findIndex(item => item.name === 'Alice') + 1}</div>
-                  <div className="username">{myRank.name}</div>
-                  <div className="addr">0x34..35</div>
-                  <div className="win-count">V{myRank.win}</div>
-                  <div className="lose-count">D{myRank.lose}</div>
-                </div>
+                {
+                  curPlayer?.addr && (
+                    <div className="my-rank-info rank-row">
+                      <div className="rank-num">{PlayerData.findIndex(item => item.addr === curPlayer?.addr) + 1}</div>
+                      {/*<div className="username">{curPlayer.name}</div>*/}
+                      <div className="addr">{formatAddress(curPlayer.addr)}</div>
+                      <div className="win-count">V{curPlayer.countOfWin}</div>
+                      {/*<div className="lose-count">D{curPlayer.lose}</div>*/}
+                    </div>
+                  )
+                }
+
               </div>
             </div>
             <div className="right-content">
               <h3>My Battle Logs</h3>
               <ul className="ffa-logs-wrapper">
                 {
-                  logs.map((log) => {
+                  logs.map((log, index) => {
+                    const addr = formatAddress(log.addr);
                     return (
-                      <li key={log.time}>
-                        <div className="ffa-content">I challenged Bob Victory</div>
-                        <time>12/30 20:20</time>
+                      <li key={index}>
+                        <div className="ffa-content">I challenged {addr} {log.win ? 'Victory' : 'Defeat'}</div>
+                        {/*<time>12/30 20:20</time>*/}
                       </li>
                     )
                   })
                 }
-                {/*<li>*/}
-                {/*  <div className="ffa-content">I challenged Bob Victory</div>*/}
-                {/*  <time>12/30 20:20</time>*/}
-                {/*</li>*/}
-                {/*<li>*/}
-                {/*  <div className="ffa-content">Bob challenged me Lose</div>*/}
-                {/*  <time>12/29 21:20</time>*/}
-                {/*</li>*/}
               </ul>
             </div>
           </div>
@@ -356,23 +345,6 @@ const FFA = () => {
       <Dialog visible={dialogVisible}>
         <div className={'dialog-user'}>
           <div className="dialog-userinfo">
-{/*            <div className="username">{defer.name}</div>*/}
-{/*            <dl>*/}
-{/*              <dt>HP</dt>*/}
-{/*              <dd>{defer.maxHp}</dd>*/}
-{/*            </dl>*/}
-{/*            <dl>*/}
-{/*              <dt>Attack</dt>*/}
-{/*              <dd>{defer.attack}</dd>*/}
-{/*            </dl>*/}
-{/*            <dl>*/}
-{/*              <dt>Defense</dt>*/}
-{/*              <dd>{defer.def}</dd>*/}
-{/*            </dl>*/}
-{/*            <dl>*/}
-{/*              <dt>Speed</dt>*/}
-{/*              <dd>{defer.speed}</dd>*/}
-{/*=======*/}
             <dl>
               <dt>HP</dt>
               <dd>{targetData?.current?.hp}</dd>
@@ -396,9 +368,9 @@ const FFA = () => {
               className="battle-opt mi-btn"
               onClick={() => {
                 setBattleVisible(true);
+
                 setDialogVisible(false);
               }}>Battle</button>
-            {/*<button className="battle-opt mi-btn" onClick={() => setSkillVisible(true)}>Battle</button>*/}
             <button
               className="battle-opt mi-btn"
               onClick={closeDialog}
@@ -412,7 +384,7 @@ const FFA = () => {
           You have successfully created a wallet.Name your character and start your journey!
         </p>
         <div className="mint-name">
-          <input type="text" className="mi-input"/>
+          <input type="text" className="mi-input" ref={usernameRef}/>
           <button className="mi-btn" onClick={create}>OK</button>
         </div>
       </Dialog>
@@ -438,7 +410,10 @@ const FFA = () => {
               'You lost. \n Come and try again. '
           }
           </pre>
-          <button className="mi-btn" onClick={() => setBattleResultDialogVisible(false)}>OK</button>
+          <button className="mi-btn" onClick={() => {
+            setBattleResultDialogVisible(false);
+            setFighting(false)
+          }}>OK</button>
         </div>
       </Dialog>
       {
@@ -476,7 +451,7 @@ const FFA = () => {
               <div className="battle-user-info-detail">
                 <div className="username">{attacker.name}</div>
                 <div>ATK {attacker.attack}</div>
-                <div>DEF {attacker.def}</div>
+                <div>DEF {attacker.defense}</div>
                 <div>SPD {attacker.speed}</div>
               </div>
 
@@ -492,7 +467,7 @@ const FFA = () => {
               <div className="battle-user-info-detail">
                 <div className="username">{defer.name}</div>
                 <div>ATK {defer.attack}</div>
-                <div>DEF {defer.def}</div>
+                <div>DEF {defer.defense}</div>
                 <div>SPD {defer.speed}</div>
               </div>
 
@@ -510,14 +485,14 @@ const FFA = () => {
             </ul>
 
             <ul className="skill-list defer-skill">
-              <li className={`skill-item skill-atk`}>
+              <li className={`skill-item skill-${Skills[targetData?.current?.skillId]?.type}`}>
               </li>
             </ul>
 
             <DuelField
               ref={battleRef}
-              leftPlayer={playerA}
-              rightPlayer={playerB}
+              leftPlayer={curPlayer}
+              rightPlayer={targetData.current ?? {}}
             />
           </div>
           </div>

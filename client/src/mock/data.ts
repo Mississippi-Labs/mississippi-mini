@@ -72,13 +72,13 @@ export const TreasureChestMockData: ITreasureChest[] = [
   }
 ];
 
-const hunterEquip = {
+export const hunterEquip = {
   head: 'Demon Crown',
   clothes: 'Demon Husk',
   handheld: 'Club'
 }
 
-const warriorEquip = {
+export const warriorEquip = {
   head: 'Ancient Helm',
   clothes: 'Holy Chestplate',
   handheld: 'Mace'

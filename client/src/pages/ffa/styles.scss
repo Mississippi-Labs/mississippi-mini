@@ -51,6 +51,17 @@
 
             .leaderboard-list {
                 flex: 1;
+                overflow: auto;
+
+                &::-webkit-scrollbar {
+                    width: 4px;
+                }
+
+                &::-webkit-scrollbar-thumb {
+                    border-radius: 4px;
+                    background: #baa48b;
+                }
+
                 li {
                     margin-bottom: 6px;
                 }
@@ -66,7 +77,11 @@
 
             .rank-row {
                 display: grid;
-                grid-template-columns: 1fr 4fr 6fr 2fr 2fr 1fr;
+                grid-template-columns: 1fr 9fr 4fr 1fr;
+
+                .win-count, .addr {
+                    text-align: center;
+                }
             }
 
             .fight-icon {

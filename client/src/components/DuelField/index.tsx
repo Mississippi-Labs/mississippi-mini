@@ -23,7 +23,7 @@ export interface IDuelFieldMethod {
 }
 
 
-const DuelField = React.forwardRef<IDuelFieldMethod>((props: any, ref) => {
+const DuelField = React.forwardRef<IDuelFieldMethod>((props: IProps, ref) => {
 
   const { leftPlayer, rightPlayer, afterAttack } = props;
   const [leftAction, setLeftAction] = useState<ActionType>('idle');
@@ -131,6 +131,7 @@ const DuelField = React.forwardRef<IDuelFieldMethod>((props: any, ref) => {
         y={1.5}
         x={5.1}
         action={rightAction}
+        toward={'Left'}
         onActionEnd={(action) => {
           if (action === 'slash') {
             setLeftAction('idle');
