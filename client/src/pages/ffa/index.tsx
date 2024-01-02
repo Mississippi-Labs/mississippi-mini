@@ -7,11 +7,17 @@ import Dialog from '@/pages/ffa/dialog';
 import DuelField, { IDuelFieldMethod } from '@/components/DuelField';
 import { hunterEquip, playerA, playerB, warriorEquip } from '@/mock/data';
 
+import Meme from '@/components/Meme';
+
 import { Skills } from '@/config/hero';
 
 import { useEntityQuery } from '@dojoengine/react'
 import { Has, getComponentValue } from "@dojoengine/recs";
 import { useDojo } from "../../DojoContext";
+import { getClient } from '../../utils/client';
+import { getUserPublicProfileRequest } from '@web3mq/client';
+
+const groupId = `group:e8b8a56a9f266d8e1edaf2d0c4f4bf0a1bca7273`
 
 const FFA = () => {
   const {
@@ -99,6 +105,101 @@ const FFA = () => {
   const formatAddress = (addr:string) => {
     return addr.slice(0, 4) + '...' + addr.slice(-2);
   }
+
+  const [clientData, setClientData] = useState<any>(null)
+  const [msgMap, setMsgMap] = useState<any>({})
+
+  const sendMsg = async (msg:any) => {
+    console.log(msg)
+    try {
+      await clientData.message.sendMessage(`E${msg + 1}`);
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
+  const showMsg = async (msg:any) => {
+    const userData = await getUserPublicProfileRequest({
+      did_type: 'web3mq',
+      did_value: msg.senderId,
+      timestamp: Date.now(),
+      my_userid: '',
+    });
+    console.log(userData, 'userData')
+    let addr = userData?.data?.nickname?.toLowerCase()
+    PlayerData.forEach((item:any) => {
+      if (item.addr.toLowerCase() === addr) {
+        item.msg = msg.content
+      }
+    })
+    // const addr = userData?.data?.wallet_address?.toLowerCase()
+    msgMap[addr] = {
+      content: msg.content
+    }
+    setMsgMap({ ...msgMap });
+  }
+
+  const getMsg = (addr:string) => {
+    addr = addr.toLowerCase()
+    let content = msgMap[addr]?.content || ''
+    return (
+      content ? <img src={`/assets/img/meme/${content}.svg`} style={{width: 20}} /> : null
+    )
+  }
+
+  useEffect(() => {
+    if (mintState !== 'finished' && !curPlayer.addr) return
+    const getClientFun = async () => {
+      console.log('getClientFun')
+      try {
+        let client = await getClient(account.address)
+        console.log(client)
+        const handleEvent = async (event: any) => {
+          if (event.type === 'channel.getList') {
+            const { channelList = [], activeChannel } = client.channel;
+            console.log(channelList, activeChannel)
+            let channel = channelList.find((item: any) => item.chatid == groupId)
+            if (!channelList || !channelList.length || !channel) {
+              await client.channel.joinGroup(groupId);
+            }
+            client.channel.setActiveChannel(channel)
+            setClientData(client)
+          }
+          if (event.type === 'message.getList') {
+            console.log(client.message.messageList, 'message.getList');
+            if (client.message.messageList?.length) {
+              let lastMsg = client.message.messageList[client.message.messageList.length - 1]
+              if (lastMsg) {
+                showMsg(lastMsg)
+              }
+            }
+          }
+          if (event.type === 'message.delivered') {
+            console.log(event)
+          }
+          if (event.type === 'message.send') {
+            let lastMsg = client.message.messageList[client.message.messageList.length - 1]
+            showMsg(lastMsg)
+          }
+        }
+        client.on('channel.getList', handleEvent)
+        client.on('message.getList', handleEvent);
+        client.on('message.delivered', handleEvent);
+        client.on('message.send', handleEvent);
+        let channelList = await client.channel.queryChannels({
+          page: 1,
+          size: 100
+        })
+        let msg = await client.message.getMessageList({
+          page: 1,
+          size: 1,
+        }, groupId); 
+      } catch (error) {
+        console.log(error)
+      }
+    }
+    getClientFun()
+  }, [mintState, curPlayer.addr]);
 
   useEffect(() => {
     let battleResultData:any = BattleResultData.find((item:any) => item.battleId == battleId);
@@ -196,7 +297,8 @@ const FFA = () => {
     // 随机0or1
     const id = Math.floor(Math.random() * 2);
     await chooseRole(account, id);
-    setMintState('finished');
+    
+    ('finished');
   }
 
   const selectSkill = (name) => {
@@ -294,6 +396,7 @@ const FFA = () => {
                         <div className="rank-num">{index + 1}</div>
                         {/*<div className="username">{item.name.toString()}</div>*/}
                         <div className="addr">{formatAddress(item.addr.toString())}</div>
+                        <div>{getMsg(item.addr)}</div>
                         <div className="win-count">V{item.countOfWin}</div>
                         {
                           curPlayer?.addr !== item.addr && (
@@ -315,6 +418,7 @@ const FFA = () => {
                       <div className="rank-num">{PlayerData.findIndex(item => item.addr === curPlayer?.addr) + 1}</div>
                       {/*<div className="username">{curPlayer.name}</div>*/}
                       <div className="addr">{formatAddress(curPlayer.addr)}</div>
+                      <div>{getMsg(curPlayer.addr)}</div>
                       <div className="win-count">V{curPlayer.countOfWin}</div>
                       {/*<div className="lose-count">D{curPlayer.lose}</div>*/}
                     </div>
@@ -497,6 +601,9 @@ const FFA = () => {
           </div>
           </div>
         )
+      }
+      {
+        clientData && <Meme sendMsg={sendMsg} />
       }
     </div>
   );
