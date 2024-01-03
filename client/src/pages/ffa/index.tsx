@@ -60,10 +60,10 @@ const FFA = () => {
       player.countOfWin += 1;
     }
   });
-  console.log(SkillData, RoleData, PlayerData, 'SkillData')
-  console.log(BattleInfoData, BattleResultData, 'BattleInfoData')
+  // console.log(SkillData, RoleData, PlayerData, 'SkillData')
+  // console.log(BattleInfoData, BattleResultData, 'BattleInfoData')
   const GlobalData = useEntityQuery([Has(Global)]).map((entity) => getComponentValue(Global, entity));
-  console.log(GlobalData, 'GlobalData')
+  // console.log(GlobalData, 'GlobalData')
 
   const curPlayer = PlayerData.find((player: any) => player.addr.toLocaleLowerCase() == account.address.toLocaleLowerCase()) || {};
   
@@ -86,6 +86,7 @@ const FFA = () => {
 
   const [skillId, setSkillId] = useState(0);
   const [battleId, setBattleId] = useState(-1);
+  const [prevBattleIsWin, setPrevBattleIsWin] = useState(false);
 
   const targetData:any = useRef();
   const usernameRef = useRef('');
@@ -205,16 +206,20 @@ const FFA = () => {
     let battleResultData:any = BattleResultData.find((item:any) => item.battleId == battleId);
     if (battleResultData) {
       let win = battleResultData?.winner;
-      console.log(battleResultData, 'win')
       const bn = BigInt(win);
       const hex = bn.toString(16);
       let winner = '0x' + hex;
       console.log('______________________________________________')
       console.log(winner == account.address ? 'You win!' : 'You lose!')
       console.log('______________________________________________')
+      setPrevBattleIsWin(winner == account.address);
       // setBattleId(-1)
     }
-  }, [battleId])
+  }, [battleId, BattleResultData.length])
+
+  useEffect(() => {
+    console.log(BattleResultData, 'BattleResultData')
+  }, [BattleResultData.length])
 
   useEffect(() => {
     setSkillId(curPlayer?.skillId)
@@ -251,7 +256,8 @@ const FFA = () => {
           setTimeout(() => {
             setRound((prevState => prevState + 1));
             // setAttackRole('right');
-            if (skillName === 'atk' && round % 3 === 0 && round <= 15) {
+            console.log(prevBattleIsWin)
+            if (prevBattleIsWin && attacker.skillId === 2 && round % 3 === 0 && round <= 15) {
               console.log('追击');
             } else {
               setAttackRole('right');
@@ -270,7 +276,7 @@ const FFA = () => {
         } else {
           setTimeout(() => {
             setRound((prevState => prevState + 1));
-            if (defer.skillId === 2 && round % 3 === 0 && round <= 15) {
+            if (!prevBattleIsWin && defer.skillId === 2 && round % 3 === 0 && round <= 15) {
               console.log('追击');
             } else {
               setAttackRole('left');
@@ -297,8 +303,7 @@ const FFA = () => {
     // 随机0or1
     const id = Math.floor(Math.random() * 2);
     await chooseRole(account, id);
-    
-    ('finished');
+
   }
 
   const selectSkill = (name) => {
@@ -321,10 +326,14 @@ const FFA = () => {
     switch (skillType) {
       case 'spd':
         _attacker.speed += 15;
+        _attacker.skillId = 1;
         break;
       case 'hp':
         _attacker.hp += 100;
+        _attacker.skillId = 0;
         break;
+      default:
+        _attacker.skillId = 2;
     }
 
     await chooseSkill(account, skillId);

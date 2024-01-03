@@ -46,7 +46,7 @@ const DuelField = React.forwardRef<IDuelFieldMethod>((props: IProps, ref) => {
       if (textureMap.current[type]) {
         setAttackType(type);
       }
-      console.log(leftPlayer.name, 'attack', type);
+      // console.log(leftPlayer.name, 'attack', type);
     },
     rightAttack: (type: AttackType) => {
       setRightAction('slash');
@@ -55,7 +55,7 @@ const DuelField = React.forwardRef<IDuelFieldMethod>((props: IProps, ref) => {
       if (textureMap.current[type]) {
         setAttackType(type);
       }
-      console.log(rightPlayer.name, 'attack', type);
+      // console.log(rightPlayer.name, 'attack', type);
     },
     kill: (role: RoleType) => {
       if (role === 'left') {
