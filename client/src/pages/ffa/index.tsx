@@ -254,13 +254,13 @@ const FFA = () => {
           setLogs([...logs, {addr: defer.addr, win: true}]);
         } else {
           setTimeout(() => {
-            setRound((prevState => prevState + 1));
-            // setAttackRole('right');
-            console.log(prevBattleIsWin)
-            if (prevBattleIsWin && attacker.skillId === 2 && round % 3 === 0 && round <= 15) {
-              console.log('追击');
+
+            if (prevBattleIsWin && attacker.skillId === 2 && round % 1 === 0 && round <= 15) {
+              console.log('atk again');
+              setRound((prevState => prevState + 0.5));
             } else {
               setAttackRole('right');
+              setRound((prevState => ~~(prevState + 1)));
             }
           }, 3000)
         }
@@ -275,11 +275,12 @@ const FFA = () => {
           setLogs([...logs, {addr: defer.addr, win: false}]);
         } else {
           setTimeout(() => {
-            setRound((prevState => prevState + 1));
-            if (!prevBattleIsWin && defer.skillId === 2 && round % 3 === 0 && round <= 15) {
-              console.log('追击');
+            if (!prevBattleIsWin && defer.skillId === 2 && round % 1 === 0 && round <= 15) {
+              console.log('atk again');
+              setRound((prevState => prevState + 0.5));
             } else {
               setAttackRole('left');
+              setRound((prevState => ~~(prevState + 1)));
             }
           }, 3000)
         }
