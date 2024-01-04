@@ -66,6 +66,7 @@ const FFA = () => {
   // console.log(GlobalData, 'GlobalData')
 
   const curPlayer = PlayerData.find((player: any) => player.addr.toLocaleLowerCase() == account.address.toLocaleLowerCase()) || {};
+  console.log(PlayerData)
   
   const [tab, setTab] = useState('home');
   const [dialogVisible, setDialogVisible] = useState(false);
@@ -73,7 +74,6 @@ const FFA = () => {
   const [skillDialogVisible, setSkillDialogVisible] = useState(false);
   const [battleResultDialogVisible, setBattleResultDialogVisible] = useState(false);
   const [battleResult, setBattleResult] = useState('');
-  const [skillName, setSkillName] = useState('');
   const [battleVisible, setBattleVisible] = useState(false);
   const [mintState, setMintState] = useState('init');
   const [fighting, setFighting] = useState(false);
@@ -221,9 +221,6 @@ const FFA = () => {
     console.log(BattleResultData, 'BattleResultData')
   }, [BattleResultData.length])
 
-  useEffect(() => {
-    setSkillId(curPlayer?.skillId)
-  }, [curPlayer?.skillId])
 
   useEffect(() => {
     const init = async () => {
@@ -255,7 +252,7 @@ const FFA = () => {
         } else {
           setTimeout(() => {
 
-            if (prevBattleIsWin && attacker.skillId === 2 && round % 1 === 0 && round <= 15) {
+            if (prevBattleIsWin && attacker.skillId === 0 && round % 1 === 0 && round <= 15) {
               console.log('atk again');
               setRound((prevState => prevState + 0.5));
             } else {
@@ -275,7 +272,7 @@ const FFA = () => {
           setLogs([...logs, {addr: defer.addr, win: false}]);
         } else {
           setTimeout(() => {
-            if (!prevBattleIsWin && defer.skillId === 2 && round % 1 === 0 && round <= 15) {
+            if (!prevBattleIsWin && defer.skillId === 0 && round % 1 === 0 && round <= 15) {
               console.log('atk again');
               setRound((prevState => prevState + 0.5));
             } else {
@@ -307,34 +304,27 @@ const FFA = () => {
 
   }
 
-  const selectSkill = (name) => {
+  const selectSkill = (id) => {
     setSkillDialogVisible(true);
-    setSkillName(name);
+    setSkillId(id);
   }
 
   const startBattle = async () => {
-    const skillIndex = Skills.findIndex(item => item.name === skillName);
-    const skillType = Skills[skillIndex].type;
     const _attacker = {...curPlayer};
     const _defer = {...targetData.current};
 
-    if (_defer.skillId === 0) {
+    if (_defer.skillId === 1) {
       _defer.hp += 100;
-    } else if (_defer.skillId === 1) {
+    } else if (_defer.skillId === 2) {
       _defer.speed += 15;
     }
 
-    switch (skillType) {
-      case 'spd':
-        _attacker.speed += 15;
-        _attacker.skillId = 1;
-        break;
-      case 'hp':
-        _attacker.hp += 100;
-        _attacker.skillId = 0;
-        break;
-      default:
-        _attacker.skillId = 2;
+    _attacker.skillId = skillId;
+
+    if (_attacker.skillId === 1) {
+      _attacker.hp += 100;
+    } else if (_attacker.skillId === 2) {
+      _attacker.speed += 15;
     }
 
     await chooseSkill(account, skillId);
@@ -505,7 +495,7 @@ const FFA = () => {
       <Dialog visible={skillDialogVisible}>
         <div className="skill-dialog-content">
           <h3>Skill</h3>
-          <p>Select {skillName} as your skill</p>
+          <p>Select {Skills.find(item => item.skillId === skillId)?.name} as your skill</p>
           <div className="opt-wrapper">
             <button className="mi-btn" onClick={startBattle}>CONFIRM</button>
             <button className="mi-btn" onClick={() => setSkillDialogVisible(false)}>Back</button>
@@ -545,7 +535,7 @@ const FFA = () => {
                   <ul className="skill-list">
                     {
                       Skills.map((item) => (
-                        <li className={`skill-item skill-${item.type}`} key={item.name} onClick={() => selectSkill(item.name)}>
+                        <li className={`skill-item skill-${item.type}`} key={item.name} onClick={() => selectSkill(item.skillId)}>
                           <div className="txt" >{item.name}</div>
                         </li>
                       ))
@@ -594,12 +584,12 @@ const FFA = () => {
             </div>
 
             <ul className="skill-list attacker-skill">
-              <li className={`skill-item skill-${Skills.find(item => item.name === skillName)?.type}`}>
+              <li className={`skill-item skill-${Skills.find(item => item.skillId === skillId)?.type}`}>
               </li>
             </ul>
 
             <ul className="skill-list defer-skill">
-              <li className={`skill-item skill-${Skills[targetData?.current?.skillId]?.type}`}>
+              <li className={`skill-item skill-${Skills.find(item => item.skillId === targetData?.current?.skillId)?.type}`}>
               </li>
             </ul>
 

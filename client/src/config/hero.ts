@@ -289,13 +289,16 @@ export const Skills = [
   {
     type: 'hp',
     name: 'HP Boost',
+    skillId: 1
   },
   {
     type: 'spd',
     name: 'SPD Surge',
+    skillId: 2
   },
   {
     type: 'atk',
     name: 'Chain ATK',
+    skillId: 0
   },
 ]
