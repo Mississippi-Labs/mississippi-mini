@@ -38,4 +38,4 @@ This starter project is a constant work in progress and contributions are greatl
 
 For any other questions, feel free to reach out to us [here](https://dojoengine.org/contact).
 
-Happy coding!
+Happy coding!!
